@@ -1,0 +1,29 @@
+{
+  "name": "employee-tracker",
+  "version": "1.0.0",
+  "description": "Tracking employee application",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Vanessa Villaluz",
+  "license": "MIT",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "inquirer": "^7.1.0",
+    "mysql2": "^2.1.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/faye3091/12-Employee-Tracker.git"
+  },
+  "keywords": [
+    "notes"
+  ],
+  "bugs": {
+    "url": "https://github.com/faye3091/12-Employee-Tracker/issues"
+  },
+  "homepage": "https://github.com/faye3091/11-Note-Taker#readme"
+}
