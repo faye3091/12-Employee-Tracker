@@ -12,6 +12,7 @@ const figlet = require("figlet");
 connection.connect((err) => {
   if (err) throw err;
 
+  //Use chalk and figlet to display heading
   console.log(
     chalk.greenBright(`==================================================`)
   );
