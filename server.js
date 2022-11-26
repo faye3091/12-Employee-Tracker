@@ -221,6 +221,7 @@ const viewEmployeesByDept = () => {
 
 //View all Roles
 const viewAllRoles = () => {
+  console.log(``);
   console.log(
     chalk.yellow.bold(
       `===========================================================================`
@@ -626,8 +627,9 @@ const updateEmployeeManager = () => {
                 `===========================================================================`
               )
             );
+
             viewAllEmployees();
-            promptUser();
+            //promptUser();
           });
         }
       });

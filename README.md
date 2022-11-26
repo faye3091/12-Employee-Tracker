@@ -48,11 +48,13 @@ THEN I am prompted to select an employee to update and their new role and this i
 
 ## Installation
 
-Clone the repository from Github. Run npm i then to view the database from run mysql -u root -p. Enter the user's mysql password. then run npm start
+Clone the repository from Github. Run `npm i` then to view the database from run `mysql -u root -p`. Enter the user's mysql password. then run `npm start`
 
 ## Usage
 
 This application will allow users to view, add, and edit employees, roles, departments, and managers.
+
+View walkthrough video via [Screencastify](https://drive.google.com/file/d/1iVKPr92X8VZeA3TbSzy6jy2jxgAi8X0J/view)
 
 ## Contributing
 
