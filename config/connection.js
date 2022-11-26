@@ -9,8 +9,7 @@ const connection = mysql.createConnection({
   port: 3306,
   user: "root",
   //password is hidden in github
-  password: "V-elson0425",
-  //password: process.env.MYSQL_PASSWORD,
+  password: "yourpassword",
   database: "employees",
 });
 
