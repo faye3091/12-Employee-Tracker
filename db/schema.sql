@@ -4,7 +4,8 @@ USE employees;
 
 CREATE TABLE department (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    department_name VARCHAR(30) NOT NULL);
+    department_name VARCHAR(30) NOT NULL
+);
 
 CREATE TABLE role (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,

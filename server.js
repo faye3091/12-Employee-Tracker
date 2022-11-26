@@ -7,7 +7,11 @@ const validate = require("./javascript/validate");
 
 connection.connect((error) => {
   if (error) throw error;
+  console.log("connected as id " + connection.threadId);
+  afterConnection();
+});
 
+afterConnection = () => {
   //Use chalk and figlet to display heading
   console.log(
     chalk.yellow.bold(
@@ -28,7 +32,7 @@ connection.connect((error) => {
     )
   );
   promptUser();
-});
+};
 
 //Prompt user for Choices
 const promptUser = () => {
@@ -118,13 +122,14 @@ const promptUser = () => {
 };
 
 //View All Employees
-const viewAllEmployees = () => {
+viewAllEmployees = () => {
   let sql = `SELECT employee.id, employee.first_name, employee.last_name,
-              role.title, department.department_name AS "department",
-              role.salary FROM employee, role, department
-              WHERE department.id = role.department_id
-              AND role.id = employee.role_id
-              ORDER BY employee.id ASC`;
+              role.title, department.department_name AS department,
+              role.salary, CONCAT (manager.first_name, " ", manager.last_name) AS manager
+              FROM employee
+              LEFT JOIN role ON employee.role_id = role.id
+              LEFT JOIN department ON role.department_id = department.id
+              LEFT JOIN employee manager ON employee.manager_id = manager.id`;
 
   connection.query(sql, (error, response) => {
     if (error) throw error;
@@ -230,13 +235,13 @@ const viewAllRoles = () => {
     )
   );
 
-  const sql = `SELECT role.id, role.title, department.department_name AS department FROM role INNER JOIN department ON role.department_id = department.id`;
+  const sql = `SELECT role.id, role.title, department.department_name AS department, role.salary
+                FROM role JOIN department ON department.id = role.department_id`;
 
   connection.query(sql, (error, response) => {
     if (error) throw error;
-    response.forEach((role) => {
-      console.log(role.title);
-    });
+
+    console.table(response);
 
     console.log(
       chalk.yellow.bold(
@@ -375,85 +380,69 @@ const addEmployee = () => {
 
 //Add a New Role
 const addRole = () => {
-  const sql = `SELECT * FROM department`;
-  connection.query(sql, (error, response) => {
-    if (error) throw error;
-    let deptNamesArray = [];
+  inquirer
+    .prompt([
+      {
+        name: "newRole",
+        type: "input",
+        message: "What is the name/title of this new role?",
+        validate: validate.validateString,
+      },
+      {
+        name: "salary",
+        type: "input",
+        message: "What is the salary of this new role?",
+        validate: validate.validateSalary,
+      },
+    ])
+    .then((answer) => {
+      let params = [answer.newRole, answer.salary];
 
-    response.forEach((department) => {
-      deptNamesArray.push(department.department_name);
-    });
+      //Grab dept from department table
+      let roleSql = `SELECT department_name, id FROM department`;
 
-    deptNamesArray.push("Create Department");
+      connection.query(roleSql, (error, data) => {
+        if (error) throw error;
 
-    inquirer
-      .prompt([
-        {
-          name: "deparmentName",
-          type: "list",
-          message: "Which department is this new role in?",
-          choices: deptNamesArray,
-        },
-      ])
-      .then((answer) => {
-        if (answer.departmentName === "Create Department") {
-          this.addDepartment();
-        } else {
-          addRoleResume(answer);
-        }
+        let dept = data.map(({ department_name, id }) => ({
+          name: department_name,
+          value: id,
+        }));
+
+        inquirer
+          .prompt([
+            {
+              name: "dept",
+              type: "list",
+              message: "Which department is this new role in?",
+              choices: dept,
+            },
+          ])
+          .then((deptChoice) => {
+            let dept = deptChoice.dept;
+            params.push(dept);
+
+            let sql = `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`;
+
+            connection.query(sql, params, (error, result) => {
+              if (error) throw error;
+
+              console.log(
+                chalk.yellow.bold(
+                  `===========================================================================`
+                )
+              );
+              console.log(chalk.greenBright(`Role successfully created!`));
+              console.log(
+                chalk.yellow.bold(
+                  `===========================================================================`
+                )
+              );
+              viewAllRoles();
+            });
+          });
       });
-
-    //Resumes process of adding new role
-    const addRoleResume = (departmentData) => {
-      inquirer
-        .prompt([
-          {
-            name: "newRole",
-            type: "input",
-            message: "What is the name/title of this new role?",
-            validate: validate.validateString,
-          },
-          {
-            name: "salary",
-            type: "input",
-            message: "What is the salary of this new role?",
-            validate: validate.validateSalary,
-          },
-        ])
-        .then((answer) => {
-          let createdRole = answer.newRole;
-          let departmentId;
-
-          response.forEach((department) => {
-            if (departmentData.departmentName === department.department_name) {
-              departmentId = department.id;
-            }
-          });
-
-          let sql = `INSERT INTO role (title, salary, department_id)
-                    VALUES (?, ?, ?)`;
-          let crit = [createdRole, answer.salary, departmentId];
-
-          connection.query(sql, crit, (error) => {
-            if (error) throw error;
-
-            console.log(
-              chalk.yellow.bold(
-                `===========================================================================`
-              )
-            );
-            console.log(chalk.greenBright(`Role successfully created!`));
-            console.log(
-              chalk.yellow.bold(
-                `===========================================================================`
-              )
-            );
-
-            viewAllRoles();
-          });
-        });
-    };
-  });
+    });
 };
 
 //Add a new Department
@@ -463,14 +452,14 @@ const addDepartment = () => {
       {
         name: "newDepartment",
         type: "input",
-        message: "What is the name of this new Departmen?",
+        message: "What is the name of this new Department?",
         validate: validate.validateString,
       },
     ])
     .then((answer) => {
       let sql = `INSERT INTO department (department_name) VALUES (?)`;
 
-      connection.query(sql, answer.newDeparment, (error, response) => {
+      connection.query(sql, answer.newDepartment, (error, response) => {
         if (error) throw error;
 
         console.log(``);
@@ -487,79 +476,77 @@ const addDepartment = () => {
 
 //Update an employee's Role
 const updateEmployeeRole = () => {
-  let sql = `SELECT employee.id, employee.first_name, employee.last_name, role.id AS "role_id"
-              FROM employee, role, department WHERE department.id = role.department_id AND role.id = employee.role_id`;
+  //Get employees from employee table
+  let sql = `SELECT * FROM employee`;
 
   connection.query(sql, (error, response) => {
     if (error) throw error;
-    let employeeNamesArray = [];
+    const employ = response.map(({ id, first_name, last_name }) => ({
+      name: first_name + " " + last_name,
+      value: id,
+    }));
 
-    response.forEach((employee) => {
-      employeeNamesArray.push(`${employee.first_name} ${employee.last_name}`);
-    });
+    inquirer
+      .prompt([
+        {
+          name: "chosenEmployee",
+          type: "list",
+          message: "Which employee has a new role?",
+          choices: employ,
+        },
+      ])
+      .then((answer) => {
+        let employee = answer.chosenEmployee;
+        let params = [];
+        params.push(employee);
 
-    let sql = `SELECT role.id, role.title FROM role`;
-    connection.query(sql, (error, response) => {
-      if (error) throw error;
-      let rolesArray = [];
+        let roleSql = `SELECT * FROM role`;
 
-      response.forEach((role) => {
-        rolesArray.push(role.title);
-      });
+        connection.query(roleSql, (error, data) => {
+          if (error) throw error;
 
-      inquirer
-        .prompt([
-          {
-            name: "chosenEmployee",
-            type: "list",
-            message: "Which employee has a new role?",
-            choices: employeeNamesArray,
-          },
-          {
-            name: "chosenRole",
-            type: "list",
-            message: "Which is their new role?",
-            choices: rolesArray,
-          },
-        ])
-        .then((answer) => {
-          let newTitleId, employeeId;
+          let roles = data.map(({ id, title }) => ({
+            name: title,
+            value: id,
+          }));
 
-          response.forEach((role) => {
-            if (answer.chosenRole === role.title) {
-              newTitleId = role.id;
-            }
-          });
+          inquirer
+            .prompt([
+              {
+                name: "role",
+                type: "list",
+                message: "What is the employee's new role?",
+                choices: roles,
+              },
+            ])
+            .then((roleChoice) => {
+              let role = roleChoice.role;
+              params.push(role);
 
-          response.forEach((employee) => {
-            if (
-              answer.chosenEmployee ===
-              `${employee.first_name} ${employee.last_name}`
-            ) {
-              employeeId = employee.id;
-            }
-          });
+              let employ = params[0];
+              params[0] = role;
+              params[1] = employ;
 
-          let sql = `UPDATE employee SET employee.role_id = ? WHERE employee.id = ?`;
+              let sql = `UPDATE employee SET role_id = ? WHERE id = ?`;
 
-          connection.query(sql, [newTitleId, employeeId], (error) => {
-            if (error) throw error;
-
-            console.log(
-              chalk.greenBright.bold(
-                `===========================================================================`
-              )
-            );
-            console.log(chalk.greenBright(`Employee Role Updated`));
-            console.log(
-              chalk.greenBright.bold(
-                `===========================================================================`
-              )
-            );
-            viewAllEmployees();
-          });
+              connection.query(sql, params, (error, result) => {
+                if (error) throw error;
+                console.log(
+                  chalk.greenBright.bold(
+                    `===========================================================================`
+                  )
+                );
+                console.log(chalk.greenBright(`Employee Role Updated`));
+                console.log(
+                  chalk.greenBright.bold(
+                    `===========================================================================`
+                  )
+                );
+                viewAllEmployees();
+              });
+            });
         });
-    });
+      });
   });
 };
 

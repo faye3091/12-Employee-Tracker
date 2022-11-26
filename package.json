@@ -21,7 +21,7 @@
     "figlet": "^1.4.0",
     "inquirer": "^8.2.5",
     "mysql": "^2.18.1",
-    "mysql2": "^2.3.3",
+    "mysql2": "^2.2.3",
     "nodemon": "^2.0.4",
     "validator": "^13.0.0"
   },
@@ -35,6 +35,5 @@
   "bugs": {
     "url": "https://github.com/faye3091/12-Employee-Tracker/issues"
   },
-  "homepage": "https://github.com/faye3091/11-Note-Taker#readme",
-  "devDependencies": {}
+  "homepage": "https://github.com/faye3091/11-Note-Taker#readme"
 }
